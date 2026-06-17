@@ -5,10 +5,9 @@
 ### Dependencies
     uv sync
 
-### Populate the data
-    sudo -u postgres psql -d postgres -f schema.sql
-    cd app
-    uv run scrape.py
+### Apply migrations
+    sudo -u postgres createdb -U postgres movie_db
+    uv run alembic upgrade head
 
 ### To run the project
     uv run fastapi dev

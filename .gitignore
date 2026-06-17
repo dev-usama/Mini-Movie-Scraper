@@ -11,3 +11,10 @@ wheels/
 
 ## env
 .env
+
+# alembic
+alembic/__pycache__
+alembic/*/__pycache__
+
+# vscode
+.vscode/*
