@@ -1,11 +1,12 @@
 from fastapi import FastAPI, Depends
 from pydantic import BaseModel
 from jose import jwt
-from app.config import settings
+from app.config import settings, SessionLocal
 from app.auth import verify_token
-from app.scrape import fetch_movie_data
+from app.models import Movie
 
 app = FastAPI()
+db = SessionLocal()
 
 # Returns JWT token (no auth)
 @app.post('/auth/login')
