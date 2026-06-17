@@ -20,36 +20,32 @@ MOVIE_TITLES = [
 ]
 
 async def fetch_and_populate():
-    print("Creating tables if they do not exist...")
-    Base.metadata.create_all(bind=db_engine)
     db = SessionLocal()
     saved_count = 0
-
-    print(f"Connecting to Postgres to process up to {len(MOVIE_TITLES)} records...\n")
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         for title in MOVIE_TITLES:
             try:
-                params = {
+                response = await client.get(OMDB_URL, params={
                     "apikey": OMDB_API_KEY,
                     "t": title,
                     "type": "movie"
-                }
-                response = await client.get(OMDB_URL, params=params)
+                })
                 
                 if response.status_code != 200:
+                    print("Server did not respond well")
                     continue
                     
                 data = response.json()
                 if data.get("Response") == "False" or not data.get("imdbID"):
-                    print(f" -> Skipped: '{title}' not found on OMDb.")
+                    print(f"'{title}' not found on OMDb.")
                     continue
 
                 imdb_id = data.get("imdbID")
 
                 existing = db.query(Movie).filter(Movie.imdb_id == imdb_id).first()
                 if existing:
-                    print(f" -> Skipped: '{data.get('Title')}' already exists in database.")
+                    print(f"{data.get('Title')} already exists in database.")
                     continue
 
                 release_year = data.get("Year")

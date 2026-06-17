@@ -6,6 +6,7 @@
     uv sync
 
 ### Populate the data
+    sudo -u postgres psql -d postgres -f schema.sql
     cd app
     uv run scrape.py
 

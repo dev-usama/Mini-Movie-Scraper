@@ -9,5 +9,5 @@ dependencies = [
     "httpx>=0.28.1",
     "psycopg2>=2.9.12",
     "python-jose[cryptography]>=3.5.0",
-    "sqlalchemy>=2.0.51",
+    "sqlmodel>=0.0.38",
 ]

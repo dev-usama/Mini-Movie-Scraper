@@ -1,7 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from sqlalchemy import create_engine
 import os
-from sqlalchemy.orm import sessionmaker
+from sqlmodel import create_engine, Session
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 ENV_FILE_PATH = os.path.abspath(os.path.join(CURRENT_DIR, "..", ".env"))
@@ -17,4 +16,7 @@ class Settings(BaseSettings):
 settings = Settings()
 
 db_engine = create_engine(settings.postgres_url)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=db_engine)
+
+def get_session():
+    with Session(db_engine) as session:
+        yield session

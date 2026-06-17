@@ -1,14 +1,12 @@
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import DeclarativeBase
+from typing import Optional
+from sqlmodel import Field, SQLModel
 
-class Base(DeclarativeBase):
-    pass
-
-class Movie(Base):
+class Movie(SQLModel, table=True):
     __tablename__ = "movie"
-    imdb_id = Column(String, primary_key=True)
-    title = Column(String, nullable=False)
-    thumbnail_url = Column(String, nullable=True)
-    genres = Column(String, nullable=True)
-    release_year = Column(Integer, nullable=True)
-    source_url = Column(String, unique=True, nullable=False)
+    
+    imdb_id: str = Field(primary_key=True)
+    title: str = Field(nullable=False)
+    thumbnail_url: Optional[str] = Field(default=None, nullable=True)
+    genres: Optional[str] = Field(default=None, nullable=True)
+    release_year: Optional[int] = Field(default=None, nullable=True)
+    source_url: str = Field(unique=True, nullable=False)

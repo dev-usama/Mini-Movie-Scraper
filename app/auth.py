@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import jwt
+from jose import jwt, JWTError
 from app.config import settings
 
 security = HTTPBearer()
@@ -16,5 +16,10 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
         )
         return payload
 
-    except Exception as e:
+    except JWTError as e:
         print(e)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
