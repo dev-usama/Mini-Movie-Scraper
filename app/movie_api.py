@@ -1,7 +1,8 @@
 import asyncio
 import httpx
-from config import SessionLocal, settings, db_engine
-from models import Movie, Base
+from sqlmodel import Session
+from config import db_engine, settings
+from models import Movie
 
 OMDB_URL = "http://www.omdbapi.com/"
 OMDB_API_KEY = settings.omdb_api_key
@@ -20,59 +21,58 @@ MOVIE_TITLES = [
 ]
 
 async def fetch_and_populate():
-    db = SessionLocal()
     saved_count = 0
 
     async with httpx.AsyncClient(timeout=10.0) as client:
-        for title in MOVIE_TITLES:
-            try:
-                response = await client.get(OMDB_URL, params={
-                    "apikey": OMDB_API_KEY,
-                    "t": title,
-                    "type": "movie"
-                })
-                
-                if response.status_code != 200:
-                    print("Server did not respond well")
-                    continue
+        with Session(db_engine) as db:
+            for title in MOVIE_TITLES:
+                try:
+                    response = await client.get(OMDB_URL, params={
+                        "apikey": OMDB_API_KEY,
+                        "t": title,
+                        "type": "movie"
+                    })
                     
-                data = response.json()
-                if data.get("Response") == "False" or not data.get("imdbID"):
-                    print(f"'{title}' not found on OMDb.")
-                    continue
+                    if response.status_code != 200:
+                        print(f"Server did not respond well for '{title}'")
+                        continue
+                        
+                    data = response.json()
+                    if data.get("Response") == "False" or not data.get("imdbID"):
+                        print(f"'{title}' not found on OMDb.")
+                        continue
 
-                imdb_id = data.get("imdbID")
+                    imdb_id = data.get("imdbID")
 
-                existing = db.query(Movie).filter(Movie.imdb_id == imdb_id).first()
-                if existing:
-                    print(f"{data.get('Title')} already exists in database.")
-                    continue
+                    existing = db.get(Movie, imdb_id)
+                    if existing:
+                        print(f"{data.get('Title')} already exists in database.")
+                        continue
 
-                release_year = data.get("Year")
-                parsed_year = int(release_year[:4]) if release_year and release_year[:4].isdigit() else None
+                    release_year = data.get("Year")
+                    parsed_year = int(release_year[:4]) if release_year and release_year[:4].isdigit() else None
 
-                new_movie = Movie(
-                    imdb_id=imdb_id,
-                    title=data.get("Title"),
-                    thumbnail_url=data.get("Poster") if data.get("Poster") != "N/A" else None,
-                    genres=data.get("Genre") if data.get("Genre") != "N/A" else None,
-                    release_year=parsed_year,
-                    source_url=f"https://www.imdb.com/title/{imdb_id}/"
-                )
-                
-                db.add(new_movie)
-                db.commit()
-                
-                saved_count += 1
-                print(f" -> Saved: '{new_movie.title}' ({imdb_id}) [{saved_count}/50]")
-                
-                await asyncio.sleep(0.2)
+                    new_movie = Movie(
+                        imdb_id=imdb_id,
+                        title=data.get("Title"),
+                        thumbnail_url=data.get("Poster") if data.get("Poster") != "N/A" else None,
+                        genres=data.get("Genre") if data.get("Genre") != "N/A" else None,
+                        release_year=parsed_year,
+                        source_url=f"https://www.imdb.com/title/{imdb_id}/"
+                    )
+                    
+                    db.add(new_movie)
+                    db.commit()
+                    
+                    saved_count += 1
+                    print(f" -> Saved: '{new_movie.title}' ({imdb_id}) [{saved_count}/50]")
+                    
+                    await asyncio.sleep(0.2)
 
-            except Exception as e:
-                print(f" -> Error processing target '{title}': {e}")
-                db.rollback()
+                except Exception as e:
+                    print(f" -> Error processing target '{title}': {e}")
+                    db.rollback()
 
-    db.close()
     print(f"\nFinished execution! Successfully committed {saved_count} movies into Postgres.")
 
 if __name__ == "__main__":
