@@ -1,10 +1,10 @@
 import asyncio
 import httpx
-from config import SessionLocal, settings
-from models import Movie
+from config import SessionLocal, settings, db_engine
+from models import Movie, Base
 
 OMDB_URL = "http://www.omdbapi.com/"
-OMDB_API_KEY = settings.postgres_url
+OMDB_API_KEY = settings.omdb_api_key
 
 MOVIE_TITLES = [
     "The Matrix", "Inception", "Interstellar", "The Dark Knight", "Gladiator",
@@ -20,6 +20,8 @@ MOVIE_TITLES = [
 ]
 
 async def fetch_and_populate():
+    print("Creating tables if they do not exist...")
+    Base.metadata.create_all(bind=db_engine)
     db = SessionLocal()
     saved_count = 0
 

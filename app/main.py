@@ -6,7 +6,12 @@ from app.auth import verify_token
 from app.models import Movie
 
 app = FastAPI()
-db = SessionLocal()
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 # Returns JWT token (no auth)
 @app.post('/auth/login')
