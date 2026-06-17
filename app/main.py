@@ -15,7 +15,7 @@ def get_db():
         db.close()
 
 
-class MovieUpdate:
+class MovieUpdate(BaseModel):
     title: Optional[str] = None
     thumbnail_url: Optional[str] = None
     genres: Optional[str] = None
@@ -60,7 +60,7 @@ def movies_by_id(id: str, user=Depends(verify_token), db=Depends(get_db)):
         "source_url": movie.source_url
     }
 
-@app.patch('movies/{id}', status_code=status.HTTP_200_OK)
+@app.patch('/movies/{id}', status_code=status.HTTP_200_OK)
 def update_movie(id:str, data:MovieUpdate, user=Depends(verify_token), db=Depends(get_db)):
     movie = db.query(Movie).filter(Movie.imdb_id == id).first()
     if not movie:
@@ -73,11 +73,10 @@ def update_movie(id:str, data:MovieUpdate, user=Depends(verify_token), db=Depend
         setattr(movie, key, value)
     db.commit()
     db.refresh(movie)
-    return movie    
-    
+    return f"Record updated successfully, {movie}"
 
-@app.delete('movies/{id}', status_code=status.HTTP_200_OK)
-def delete_movie(id: str, data: user=Depends(verify_token), db=Depends(get_db)):
+@app.delete('/movies/{id}', status_code=status.HTTP_200_OK)
+def delete_movie(id: str, user=Depends(verify_token), db=Depends(get_db)):
     movie = db.query(Movie).filter(Movie.imdb_id == id).first()
     if not movie:
         raise HTTPException(
@@ -85,4 +84,4 @@ def delete_movie(id: str, data: user=Depends(verify_token), db=Depends(get_db)):
             detail=f"Movie with IMDb ID '{imdb_id}' not found."
         )
     db.delete(movie)
-    return "Update title or genre (🔒 auth required)"
+    return "Record deleted successfully"
